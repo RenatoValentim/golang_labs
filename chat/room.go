@@ -6,3 +6,17 @@ type room struct {
 	leave   chan *client
 	clients map[*client]bool
 }
+
+func (r *room) run() {
+	for {
+		select {
+		case client := <-r.leave:
+			delete(r.clients, client)
+			close(client.send)
+		case msg := <-r.forward:
+			for client := range r.clients {
+				client.send <- msg
+			}
+		}
+	}
+}
